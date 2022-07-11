@@ -5,34 +5,46 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
 
 use Spotify; 
 
 class MusicProducedController extends Controller
 {
     //
-    public function searchArtist(){
+    public function show_form(){
 
-        $artist = Spotify::searchArtists('The Clash')->get();
+            return view('layouts.form'); 
 
-        dd($artist); 
+    }
+    public function searchArtist(Request $request){
 
+        $request->validate(
+
+            ['artist' => 'required|max:150']
+
+        );
+
+        $artists_result = Spotify::searchArtists($request->input('artist'))->get();
+
+        if(isset($artists_result))
+            $artists = $artists_result["artists"]["items"]; 
+
+         
+        return view('choose', compact('artists'));
 
     }
 
-    public function searchAlbums(){
-
-
-        $albums = Spotify::searchAlbums('3RGLhK1IP9jnYFH4BRFJBS')->get(); 
-
-        dd($albums); 
+    public function searchAlbums($artist_id){
+    
+        return Spotify::searchAlbums($artist_id)->get(); 
 
     }
 
-    public function artistAlbums(){
+    public function artistAlbums($artist_id){
 
 
-        $albums = Spotify::artistAlbums('3RGLhK1IP9jnYFH4BRFJBS')->get(); 
+        $albums = Spotify::artistAlbums($artist_id)->get(); 
 
         $album_id_array = []; 
         foreach($albums["items"] as $a){
@@ -46,9 +58,9 @@ class MusicProducedController extends Controller
 
     
 
-    public function albumTracks(){
+    public function albumTracks($artist_id){
 
-        $artist_album_ids = $this->artistAlbums(); 
+        $artist_album_ids = $this->artistAlbums($artist_id); 
         $tracks_array = []; 
 
         foreach($artist_album_ids as $a){
@@ -83,12 +95,40 @@ class MusicProducedController extends Controller
   //     1 => array:14 [▶] 
         }
 
-        public function calculateTotalAlbumTime(){
 
+        public function inTracksArray($name, $tracks_array){
+
+                $exploded = explode(' -',$name); 
+
+                //will be empty first time
+                if(empty($tracks_array))
+                    return false; 
+
+                else{
+                 
+                    return in_array($exploded[0], Arr::flatten($tracks_array)); 
+                }
+                    
+
+
+        }
+
+        public function calculateTotalAlbumTime(Request $request){
+
+             $request->validate(
+            [
+                'artist_id' => 'alpha_num'
+
+            ]
+        );
 
             $playing_time_array = []; 
 
-            $albums = $this->albumTracks(); 
+            //get array of albums
+            $albums = $this->albumTracks($request->input('artist_id')); 
+
+
+            $tracks_array = []; 
 
             foreach($albums as $a){
 
@@ -96,40 +136,54 @@ class MusicProducedController extends Controller
 
 
 
-            if(isset($track["name"]) && Str::contains($track["name"], ['remastered','Remastered'])){
-                var_dump('it is remastered');
-            }
-            else{
-                var_dump('it is not');
+            if(isset($track["name"])){
+               
 
-                $tracks_array[] = [
+                // if($this->notDuplicate($track["name"], $tracks_array) && !Str::contains($track["name"], ['remastered','Remastered'])){
+
+                if(!$this->inTracksArray($track["name"], $tracks_array) && !Str::contains($track["name"], ['remastered','Remastered', 'Outtake', 'live', 'Live', 'Different Lyrics'])){
+
+
+                    $tracks_array[] = [
                     'name' => $track["name"], 
                     'time' => $track["duration_ms"]
 
-
                 ];
-            }
 
 
-
-
-                    if($track)
-
-                    $playing_time_array[] = $track["duration_ms"]; 
                 }
+                
 
-            }
+            } //if track name
 
-            dd($tracks_array); 
+
+
+
+                    // if($track["duration_ms"])
+
+                    // $playing_time_array[] = $track["duration_ms"]; 
+                
+
+            } // inner foreach
+
+            } // outer foreach
+
+            
+
             // dd($playing_time_array); 
-            $playing_time = .1; 
-            foreach($playing_time_array as $p){
+            $playing_time = 0; 
 
-                $playing_time+= $p; 
+            foreach($tracks_array as $track){
+
+                $playing_time+= $track["time"]; 
 
             }
+            echo '<pre>';
+            var_dump('PLAYING TIME '.$playing_time/60000); 
+            var_dump('tracks_array'); 
+            var_dump($tracks_array); 
+            echo '<pre>';
 
-            dd($playing_time/60000); 
 
         }
 
