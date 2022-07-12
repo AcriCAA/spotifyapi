@@ -14,14 +14,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('search');
 });
 
-Route::get('search/artist', [App\Http\Controllers\MusicProducedController::class, 'show_form']); 
+Route::get('search/artist', [App\Http\Controllers\MusicProducedController::class, 'show_form'])->name('search'); 
 Route::post('get/artist', [App\Http\Controllers\MusicProducedController::class, 'searchArtist']); 
 Route::get('search/albums', [App\Http\Controllers\MusicProducedController::class, 'searchAlbums']); 
 Route::post('artist/albums', [App\Http\Controllers\MusicProducedController::class, 'calculateTotalAlbumTime']); 
 Route::get('albums/tracks', [App\Http\Controllers\MusicProducedController::class, 'albumTracks']); 
+Route::get('test', [App\Http\Controllers\MusicProducedController::class, 'test']); 
 // Route::get('albums/all/time', [App\Http\Controllers\MusicProducedController::class, 'calculateTotalAlbumTime']); 
 
 // calculateTotalAlbumTime
