@@ -152,31 +152,36 @@ class MusicProducedController extends Controller
         public function inTracksArray($name, $tracks_array){
 
                 $exploded = explode(' -',$name); 
+                $contains = false; 
 
                 //will be empty first time
-                if(empty($tracks_array))
+                if(empty($tracks_array)){
                     return false; 
+                }
 
                 else{
                  
-                 $array = Arr::pluck($tracks_array, 'name');
-                 $exploded_track_name = explode(' -',$array[0]); 
-                 
+                 $names_array = Arr::pluck($tracks_array, 'name');
 
-                 return Str::is($exploded_track_name[0],$exploded[0]);
-                    // return in_array($exploded[0], Arr::flatten($tracks_array)); 
+                     // $exploded_track_name = explode(' -',$array[0]); 
+                     foreach($names_array as $a){
+                        $exploded_track_name = explode(' -',$a); 
+                        if(Str::contains($exploded_track_name[0],$exploded[0])){
+                            $contains = true; 
+                        }
+
+                     }
+                     
+
+                 }
+
+                    return $contains; 
 
 
  
   
                 }
                  
-                
-
-// 200   
-
-
-        }
 
         public function calculateTotalAlbumTime(Request $request){
 
@@ -231,7 +236,7 @@ class MusicProducedController extends Controller
                 // if(!$this->inTracksArray($track["name"], $tracks_array) && !Str::contains($track["name"], ['remastered','Remastered', 'Outtake', 'live', 'Live', 'Different Lyrics'])){
 
 
-                if(!Str::contains($track["name"], ['Outtake', 'live', 'Live', 'Different Lyrics'])){
+                if(!$this->inTracksArray($track["name"], $tracks_array) && !Str::contains($track["name"], ['Outtake', 'live', 'Live', 'Different Lyrics'])){
 
                 // if(!$this->inTracksArray($track["name"], $tracks_array)){
 
