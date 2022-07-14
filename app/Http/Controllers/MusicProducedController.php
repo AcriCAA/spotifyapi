@@ -44,18 +44,8 @@ class MusicProducedController extends Controller
     public function test(){
 
         $artist_id = '3RGLhK1IP9jnYFH4BRFJBS'; 
-           $a = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->get(); 
-
-
-           dd($this->albumTracks($artist_id)); 
-
-        
-    }
-
-    public function artistAlbums($artist_id){
-
-
-          $a = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->get(); 
+       
+          $a = Spotify::artistAlbums($artist_id)->limit(50)->get(); 
 
 
 
@@ -70,7 +60,35 @@ class MusicProducedController extends Controller
         if($total > 50){ 
             while($offset < $total){
 
-                $albums[] = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->offset($offset)->get();
+                $albums[] = Spotify::artistAlbums($artist_id)->includeGroups('album,single')->limit(50)->offset($offset)->get();
+                $offset+=50; 
+            }
+        }
+       
+
+        dd($albums); 
+        
+    }
+
+    public function artistAlbums($artist_id){
+
+
+          $a = Spotify::artistAlbums($artist_id)->limit(50)->get(); 
+
+
+
+        $total = $a["total"]; 
+
+
+        $offset = 50; 
+
+        $albums = []; 
+        $albums[] = $a; 
+
+        if($total > 50){ 
+            while($offset < $total){
+
+                $albums[] = Spotify::artistAlbums($artist_id)->includeGroups('album,single')->limit(50)->offset($offset)->get();
                 $offset+=50; 
             }
         }
