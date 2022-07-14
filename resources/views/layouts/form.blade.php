@@ -6,7 +6,7 @@
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-12">
+        
               <form role="form" method="POST" action="/get/artist">
                         @csrf
 
@@ -14,6 +14,8 @@
 
 
                   <div class="col-lg-6">
+                    <h1>Search</h1>
+                    <label>Enter Artist Name</label>
                                 <input
                                         type="text"
                                         class="form-control{{ $errors->has('artist') ? ' is-invalid' : '' }}"
@@ -29,13 +31,13 @@
                                     </div>
                                 @endif
                             </div>
-                        </div>
+                        
 
                 
 
-                  <div class="form-group row">
-                            <div class="col-lg-6 offset-lg-4">
-                                <button type="submit" class="btn btn-outline-success">
+                  <div class="row mt-2">
+                            <div class="col-lg-12">
+                                <button type="submit" class="btn btn-outline-success text-right">
                                     Submit
                                 </button>
                             </div>

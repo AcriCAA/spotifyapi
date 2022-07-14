@@ -44,39 +44,39 @@ class MusicProducedController extends Controller
     public function test(){
 
         $artist_id = '3RGLhK1IP9jnYFH4BRFJBS'; 
-        $a = Spotify::artistAlbums($artist_id)->get(); 
+           $a = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->get(); 
 
 
-        $total = $a["total"]; 
+           dd($this->albumTracks($artist_id)); 
 
-        $offset = 0; 
-
-        $albums = []; 
-        while($offset < $total){
-
-            $albums[] = Spotify::artistAlbums($artist_id)->offset($offset)->get();
-            $offset++; 
-        }
-
-        dd($albums); 
+        
     }
 
     public function artistAlbums($artist_id){
 
 
-          $a = Spotify::artistAlbums($artist_id)->get(); 
+          $a = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->get(); 
+
 
 
         $total = $a["total"]; 
 
-        $offset = 0; 
+
+        $offset = 50; 
 
         $albums = []; 
-        while($offset < $total){
+        $albums[] = $a; 
 
-            $albums[] = Spotify::artistAlbums($artist_id)->offset($offset)->get();
-            $offset++; 
+        if($total > 50){ 
+            while($offset < $total){
+
+                $albums[] = Spotify::artistAlbums($artist_id)->includeGroups('album', 'single')->limit(50)->offset($offset)->get();
+                $offset+=50; 
+            }
         }
+       
+
+        
 
         $album_id_array = []; 
 
@@ -84,7 +84,14 @@ class MusicProducedController extends Controller
 
         foreach($album["items"] as $a){
 
-            $album_id_array[] = $a["id"]; 
+            $album_id_array[] = 
+            [
+
+                'id' => $a["id"],
+                'name' => $a["name"]
+ 
+            ];
+            
         }
 
         }
@@ -103,11 +110,19 @@ class MusicProducedController extends Controller
 
         foreach($artist_album_ids as $a){
 
-            $tracks_array[] = Spotify::albumTracks($a)->get();
+            $tracks_array[] = [
+
+                'tracks' => Spotify::albumTracks($a[
+                "id"])->get(),
+
+                'album_name' => $a["name"],
+
+
+            ];
 
 
         }
-        
+            
             return $tracks_array;
             //returns this: 
   //           ^ array:20 [▼
@@ -144,9 +159,21 @@ class MusicProducedController extends Controller
 
                 else{
                  
-                    return in_array($exploded[0], Arr::flatten($tracks_array)); 
+                 $array = Arr::pluck($tracks_array, 'name');
+                 $exploded_track_name = explode(' -',$array[0]); 
+                 
+
+                 return Str::is($exploded_track_name[0],$exploded[0]);
+                    // return in_array($exploded[0], Arr::flatten($tracks_array)); 
+
+
+ 
+  
                 }
-                    
+                 
+                
+
+// 200   
 
 
         }
@@ -166,32 +193,57 @@ class MusicProducedController extends Controller
             $albums = $this->albumTracks($request->input('artist_id')); 
 
 
+           
+
+            $tracks_array = $this->constructTracksArray($albums); 
+
+            //grab the count
+            $count = $tracks_array["count"]; 
+
+            //remove count from the array
+            $tracks_array = Arr::except($tracks_array, ['count']);
+
+                    
+            $playing_time_ms = $this->sumPlayingTime($tracks_array); 
+
+            $playing_time_minutes = $this->convertToMinutes($playing_time_ms); 
+           
+          return view('layouts.results', compact('tracks_array', 'playing_time_minutes','count'));
+
+
+        }
+
+        public function constructTracksArray($albums){
+
+
             $tracks_array = []; 
 
             $count = 0; 
-
             foreach($albums as $a){
 
-                foreach($a["items"] as $track){
+                foreach($a["tracks"]["items"] as $track){
 
-
-
-            if(isset($track["name"])){
-               
+                if(isset($track["name"])){
+                       
 
                 // if($this->notDuplicate($track["name"], $tracks_array) && !Str::contains($track["name"], ['remastered','Remastered'])){
 
                 // if(!$this->inTracksArray($track["name"], $tracks_array) && !Str::contains($track["name"], ['remastered','Remastered', 'Outtake', 'live', 'Live', 'Different Lyrics'])){
 
 
-                if(!Str::contains($track["name"], ['remastered','Remastered', 'Outtake', 'live', 'Live', 'Different Lyrics'])){
+                if(!Str::contains($track["name"], ['Outtake', 'live', 'Live', 'Different Lyrics'])){
 
+                // if(!$this->inTracksArray($track["name"], $tracks_array)){
 
-                    $tracks_array[] = [
+                    $tracks_array[] =  [
+                    'album_name' => $a['album_name'],                       
                     'name' => $track["name"], 
-                    'time' => $track["duration_ms"]
+                    'time' => $track["duration_ms"],
+                    'link' => $track["uri"]
 
-                ];
+
+                    ];
+                    
 
                 $count++;
                 }
@@ -200,24 +252,17 @@ class MusicProducedController extends Controller
             } //if track name
 
 
-
-
-                    // if($track["duration_ms"])
-
-                    // $playing_time_array[] = $track["duration_ms"]; 
-                
-
             } // inner foreach
+
+
 
             } // outer foreach
 
-            
-            $playing_time_ms = $this->sumPlayingTime($tracks_array); 
+            $tracks_array["count"] = $count; 
 
-            $playing_time_minutes = $this->convertToMinutes($playing_time_ms); 
-           
-          return view('layouts.results', compact('tracks_array', 'playing_time_minutes','count'));
 
+
+            return $tracks_array; 
 
         }
 
