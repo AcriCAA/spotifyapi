@@ -73,7 +73,7 @@ class MusicProducedController extends Controller
     public function artistAlbums($artist_id){
 
 
-          $a = Spotify::artistAlbums($artist_id)->limit(50)->get(); 
+          $a = Spotify::artistAlbums($artist_id)->includeGroups('album,single')->limit(50)->get(); 
 
 
 
